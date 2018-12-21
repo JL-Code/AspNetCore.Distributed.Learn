@@ -7,7 +7,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A93ABFBF-2EC
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{65D73277-0407-4033-AF7E-3F071B3382D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthenticationService", "src\AuthenticationService\AuthenticationService.csproj", "{D934EB2D-5815-45E5-AAC4-5B43FBE0C0A4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer", "src\IdentityServer\IdentityServer.csproj", "{D934EB2D-5815-45E5-AAC4-5B43FBE0C0A4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MvcClient", "src\MvcClient\MvcClient.csproj", "{6F91EDCF-6970-4264-BFC6-DDFDC01842A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,12 +21,17 @@ Global
 		{D934EB2D-5815-45E5-AAC4-5B43FBE0C0A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D934EB2D-5815-45E5-AAC4-5B43FBE0C0A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D934EB2D-5815-45E5-AAC4-5B43FBE0C0A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F91EDCF-6970-4264-BFC6-DDFDC01842A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F91EDCF-6970-4264-BFC6-DDFDC01842A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F91EDCF-6970-4264-BFC6-DDFDC01842A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F91EDCF-6970-4264-BFC6-DDFDC01842A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{D934EB2D-5815-45E5-AAC4-5B43FBE0C0A4} = {A93ABFBF-2ECE-4150-9DA5-FC0E93FA0834}
+		{6F91EDCF-6970-4264-BFC6-DDFDC01842A0} = {A93ABFBF-2ECE-4150-9DA5-FC0E93FA0834}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {99244866-E882-40A2-A451-3277AE6687B4}
