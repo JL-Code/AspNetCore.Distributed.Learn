@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using IdentityServer4;
 using IdentityServer4.Models;
 using IdentityServer4.Test;
@@ -55,9 +56,15 @@ namespace IdentityServer
             {
                 new TestUser
                 {
-                    SubjectId = Guid.NewGuid().ToString(),
+                    SubjectId = "001",
                     Username = "jiangy",
-                    Password = "123456"
+                    Password = "123456",
+                    Claims = new []
+                    {
+                        new Claim("name", "蒋勇"),
+                        new Claim("sex", "男"),
+                        new Claim("website", "https://bob.com")
+                    }
                 }
             };
         }

@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using IdentityServer4.Extensions;
+using System.Collections.Generic;
 
 namespace IdentityServer.Controllers.Account
 {
@@ -106,6 +107,163 @@ namespace IdentityServer.Controllers.Account
 
         #endregion
 
+        #region 外部登录
+
+        /// <summary>
+        /// initiate roundtrip to external authentication provider
+        /// 开始往返于外部验证提供商
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> ExternalLogin(string provider, string returnUrl)
+        {
+            if (AccountOptions.WindowsAuthenticationSchemeName == provider)
+            {
+                // windows authentication needs special handling
+                // Windows身份验证需要特殊处理
+                return await ProcessWindowsLoginAsync(returnUrl);
+            }
+            else
+            {
+                // start challenge and roundtrip the return URL and 
+                var props = new AuthenticationProperties()
+                {
+                    RedirectUri = Url.Action("ExternalLoginCallback"),
+                    Items =
+                    {
+                        { "returnUrl", returnUrl },
+                        { "scheme", provider },
+                    }
+                };
+                return Challenge(props, provider);
+            }
+        }
+
+        /// <summary>
+        /// Post processing of external authentication
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> ExternalLoginCallback()
+        {
+            // read external identity from the temporary cookie
+            // 从临时cookie中读取外部身份
+            var result = await HttpContext.AuthenticateAsync(IdentityServer4.IdentityServerConstants.ExternalCookieAuthenticationScheme);
+            if (result?.Succeeded != true)
+            {
+                throw new Exception("External authentication error");
+            }
+
+            // lookup our user and external provider info
+            // 查找我们的用户和外部提供商信息
+            var (user, provider, providerUserId, claims) = FindUserFromExternalProvider(result);
+            if (user == null)
+            {
+                // this might be where you might initiate a custom workflow for user registration
+                // in this sample we don't show how that would be done, as our sample implementation
+                // simply auto-provisions new external user
+                // 这可能是您可以为用户注册启动自定义工作流的地方
+                // 在这个示例中，我们没有显示如何完成，作为我们的示例实现
+                // 只需自动配置新的外部用户
+                user = AutoProvisionUser(provider, providerUserId, claims);
+            }
+
+            // this allows us to collect any additonal claims or properties
+            // for the specific prtotocols used and store them in the local auth cookie.
+            // this is typically used to store data needed for signout from those protocols.
+            // 这允许我们收集任何附加声明或属性
+            // 对于使用的特定prtotocols并将它们存储在本地auth cookie中。
+            // 这通常用于存储从这些协议注销所需的数据。
+            var additionalLocalClaims = new List<Claim>();
+            var localSignInProps = new AuthenticationProperties();
+            ProcessLoginCallbackForOidc(result, additionalLocalClaims, localSignInProps);
+            ProcessLoginCallbackForWsFed(result, additionalLocalClaims, localSignInProps);
+            ProcessLoginCallbackForSaml2p(result, additionalLocalClaims, localSignInProps);
+
+            // issue authentication cookie for user
+            // 为用户发出身份验证Cookie
+            await _events.RaiseAsync(new UserLoginSuccessEvent(provider, providerUserId, user.SubjectId, user.Username));
+            await HttpContext.SignInAsync(user.SubjectId, user.Username, provider, localSignInProps, additionalLocalClaims.ToArray());
+
+            // delete temporary cookie used during external authentication
+            // 删除外部认证期间使用的临时cookie
+            await HttpContext.SignOutAsync(IdentityServer4.IdentityServerConstants.ExternalCookieAuthenticationScheme);
+
+            // validate return URL and redirect back to authorization endpoint or a local page
+            // 验证返回URL并重定向回授权端点或本地页面
+            var returnUrl = result.Properties.Items["returnUrl"];
+            if (_interaction.IsValidReturnUrl(returnUrl) || Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            return Redirect("~/");
+        }
+
+        private (TestUser user, string provider, string providerUserId, IEnumerable<Claim> claims) FindUserFromExternalProvider(AuthenticateResult result)
+        {
+            var externalUser = result.Principal;
+
+            // try to determine the unique id of the external user (issued by the provider)
+            // the most common claim type for that are the sub claim and the NameIdentifier
+            // depending on the external provider, some other claim type might be used
+            // 尝试确定外部用户的唯一ID（由提供者发布）
+            // 最常见的声明类型是子声明和NameIdentifier
+            // 取决于外部提供程序，可能会使用其他一些声明类型
+            var userIdClaim = externalUser.FindFirst(JwtClaimTypes.Subject) ??
+                              externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
+                              throw new Exception("Unknown userid");
+
+            // remove the user id claim so we don't include it as an extra claim if/when we provision the user
+            // 删除用户ID声明，以便在我们配置用户时，我们不会将其作为额外声明包含在内
+            var claims = externalUser.Claims.ToList();
+            claims.Remove(userIdClaim);
+
+            var provider = result.Properties.Items["scheme"];
+            var providerUserId = userIdClaim.Value;
+
+            // find external user
+            // 找到外部用户
+            var user = _users.FindByExternalProvider(provider, providerUserId);
+
+            return (user, provider, providerUserId, claims);
+        }
+
+        private TestUser AutoProvisionUser(string provider, string providerUserId, IEnumerable<Claim> claims)
+        {
+            var user = _users.AutoProvisionUser(provider, providerUserId, claims.ToList());
+            return user;
+        }
+
+        private void ProcessLoginCallbackForOidc(AuthenticateResult externalResult, List<Claim> localClaims, AuthenticationProperties localSignInProps)
+        {
+            // if the external system sent a session id claim, copy it over
+            // so we can use it for single sign-out
+            // 如果外部系统发送了会话ID声明，请复制它
+            // 所以我们可以用它来进行单点登出
+            var sid = externalResult.Principal.Claims.FirstOrDefault(x => x.Type == JwtClaimTypes.SessionId);
+            if (sid != null)
+            {
+                localClaims.Add(new Claim(JwtClaimTypes.SessionId, sid.Value));
+            }
+
+            // if the external provider issued an id_token, we'll keep it for signout
+            // 如果外部提供者发出了id_token，我们会保留它以进行注销
+            var id_token = externalResult.Properties.GetTokenValue("id_token");
+            if (id_token != null)
+            {
+                localSignInProps.StoreTokens(new[] { new AuthenticationToken { Name = "id_token", Value = id_token } });
+            }
+        }
+
+        private void ProcessLoginCallbackForWsFed(AuthenticateResult externalResult, List<Claim> localClaims, AuthenticationProperties localSignInProps)
+        {
+        }
+
+        private void ProcessLoginCallbackForSaml2p(AuthenticateResult externalResult, List<Claim> localClaims, AuthenticationProperties localSignInProps)
+        {
+        }
+
+        #endregion
+
         #region 注销
 
         /// <summary>
@@ -174,33 +332,6 @@ namespace IdentityServer.Controllers.Account
         #endregion
 
         #region Helper 
-
-        /// <summary>
-        /// initiate roundtrip to external authentication provider
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> ExternalLogin(string provider, string returnUrl)
-        {
-            if (AccountOptions.WindowsAuthenticationSchemeName == provider)
-            {
-                // windows authentication needs special handling
-                return await ProcessWindowsLoginAsync(returnUrl);
-            }
-            else
-            {
-                // start challenge and roundtrip the return URL and 
-                var props = new AuthenticationProperties()
-                {
-                    RedirectUri = Url.Action("ExternalLoginCallback"),
-                    Items =
-                    {
-                        {"returnUrl", returnUrl},
-                        {"scheme", provider},
-                    }
-                };
-                return Challenge(props, provider);
-            }
-        }
 
         private async Task<LoginViewModel> BuildLoginViewModelAsync(string returnUrl)
         {
