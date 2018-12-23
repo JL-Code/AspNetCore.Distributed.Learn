@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 namespace MvcClient
 {
@@ -56,13 +57,16 @@ namespace MvcClient
                     #region 设置这些属性，以支持混合流程
 
                     options.ClientSecret = "secret";
-                    options.ResponseType = "code id_token";
-                    options.GetClaimsFromUserInfoEndpoint = true;
+                    options.ResponseType = OpenIdConnectResponseType.CodeIdToken; //"code id_token";
                     options.Scope.Add("api1");
+                    options.Scope.Add("profile");
                     options.Scope.Add("offline_access");
-                    // 要将website声明保留在我们的mvc客户端身份中，我们需要使用ClaimActions明确映射声明。
+                    options.GetClaimsFromUserInfoEndpoint = true;
+                  
+                    // .net core2 后要将website声明保留在我们的mvc客户端身份中(ID Token)，我们需要使用ClaimActions明确映射声明。
                     options.ClaimActions.MapJsonKey("website", "website");
-
+                    options.ClaimActions.MapJsonKey("address", "address");
+                    options.ClaimActions.MapJsonKey("avatar", "avatar");
                     #endregion
 
                 });

@@ -44,6 +44,7 @@ namespace IdentityServerWithAspNetIdentity
                 {
                     ClientId = "hybrid_and_api_access_mvc",
                     ClientName = "混合流程验证客户端",
+                    LogoUri = "https://avatars0.githubusercontent.com/u/14163944?s=460&v=4",
                     AllowedGrantTypes = GrantTypes.HybridAndClientCredentials,
 
                     ClientSecrets =

@@ -24,7 +24,8 @@ namespace IdentityServerWithAspNetIdentity.Data
                 {
                     jiangy = new ApplicationUser
                     {
-                        UserName = "jiangy"
+                        UserName = "jiangy",
+                        Avatar = "https://avatars0.githubusercontent.com/u/14163944?s=460&v=4"
                     };
                     var result = userMgr.CreateAsync(jiangy, "Pass123$").Result;
                     if (!result.Succeeded)

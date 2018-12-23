@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using IdentityServerWithAspNetIdentity.Models;
 using IdentityServerWithAspNetIdentity.Entities;
+using IdentityServer4.Services;
 
 namespace IdentityServerWithAspNetIdentity
 {
@@ -33,7 +34,7 @@ namespace IdentityServerWithAspNetIdentity
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
-                //.AddDefaultUI();
+            //.AddDefaultUI();
 
             // Add application services.
             //services.AddTransient<IEmailSender, EmailSender>();
@@ -54,7 +55,8 @@ namespace IdentityServerWithAspNetIdentity
             .AddInMemoryIdentityResources(Config.GetIdentityResources())
             .AddInMemoryApiResources(Config.GetApiResources())
             .AddInMemoryClients(Config.GetClients())
-            .AddAspNetIdentity<ApplicationUser>();
+            .AddAspNetIdentity<ApplicationUser>()
+            .Services.AddScoped<IProfileService, ProfileService>();
 
         }
 
