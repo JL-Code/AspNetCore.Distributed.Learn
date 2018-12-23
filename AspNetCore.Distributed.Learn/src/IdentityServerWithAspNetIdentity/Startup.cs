@@ -32,12 +32,13 @@ namespace IdentityServerWithAspNetIdentity
 
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddDefaultTokenProviders().AddDefaultUI();
+                .AddDefaultTokenProviders();
+                //.AddDefaultUI();
 
             // Add application services.
             //services.AddTransient<IEmailSender, EmailSender>();
 
-            services.AddMvc();
+            services.AddMvc().SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.CompatibilityVersion.Version_2_1);
 
             // configure identity server with in-memory stores, keys, clients and scopes
             // 使用内存存储，密钥，客户端和范围配置身份服务器
@@ -48,6 +49,7 @@ namespace IdentityServerWithAspNetIdentity
                 options.Events.RaiseFailureEvents = true;
                 options.Events.RaiseSuccessEvents = true;
             })
+            .AddDeveloperSigningCredential()
             .AddInMemoryPersistedGrants()
             .AddInMemoryIdentityResources(Config.GetIdentityResources())
             .AddInMemoryApiResources(Config.GetApiResources())

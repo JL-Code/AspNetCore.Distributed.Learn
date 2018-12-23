@@ -53,7 +53,7 @@ namespace IdentityServerWithAspNetIdentity
 
                     RedirectUris           = { "http://localhost:5001/signin-oidc" },
                     PostLogoutRedirectUris = { "http://localhost:5001/signout-callback-oidc" },
-                    RequireConsent =false,
+                    RequireConsent =true,
                     AllowedScopes =
                     {
                         IdentityServerConstants.StandardScopes.OpenId,

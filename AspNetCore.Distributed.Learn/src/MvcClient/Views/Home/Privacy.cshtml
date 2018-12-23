@@ -17,6 +17,9 @@
 
     <dt>refresh token</dt>
     <dd>@await ViewContext.HttpContext.GetTokenAsync("refresh_token")</dd>
+
+    <dt>id token</dt>
+    <dd>@await ViewContext.HttpContext.GetTokenAsync("id_token")</dd>
 </dl>
 
 <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="CallApiUsingUserAccessToken">CallApiUsingUserAccessToken</a>
