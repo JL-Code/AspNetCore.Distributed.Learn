@@ -58,8 +58,8 @@ namespace MvcClient
 
                     options.ClientSecret = "secret";
                     options.ResponseType = OpenIdConnectResponseType.CodeIdToken; //"code id_token";
+                    // 请求权限范围
                     options.Scope.Add("api1");
-                    options.Scope.Add("profile");
                     options.Scope.Add("offline_access");
                     options.GetClaimsFromUserInfoEndpoint = true;
                   

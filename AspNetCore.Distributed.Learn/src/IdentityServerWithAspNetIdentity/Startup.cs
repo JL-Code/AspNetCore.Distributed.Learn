@@ -23,10 +23,9 @@ namespace IdentityServerWithAspNetIdentity
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
+            var connstr = Configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(
-                    Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(connstr));
 
             //services.AddDefaultIdentity<IdentityUser>()
             //    .AddEntityFrameworkStores<ApplicationDbContext>();
@@ -52,9 +51,32 @@ namespace IdentityServerWithAspNetIdentity
             })
             .AddDeveloperSigningCredential()
             .AddInMemoryPersistedGrants()
-            .AddInMemoryIdentityResources(Config.GetIdentityResources())
-            .AddInMemoryApiResources(Config.GetApiResources())
-            .AddInMemoryClients(Config.GetClients())
+            //.AddInMemoryIdentityResources(Config.GetIdentityResources())
+            //.AddInMemoryApiResources(Config.GetApiResources())
+            //.AddInMemoryClients(Config.GetClients())
+            // 使用EF 代替内存存储
+            // 存储配置信息 Client Resource 
+            .AddConfigurationStore(options =>
+            {
+                options.ConfigureDbContext = builder =>
+                {
+                    builder.UseSqlServer(connstr, sql =>
+                    {
+                        sql.MigrationsAssembly(typeof(Startup).Assembly.GetName().Name);
+                    });
+                };
+            })
+            // 存储授权操作
+             .AddOperationalStore(options =>
+              {
+                  options.ConfigureDbContext = builder =>
+                  {
+                      builder.UseSqlServer(connstr, sql =>
+                      {
+                          sql.MigrationsAssembly(typeof(Startup).Assembly.GetName().Name);
+                      });
+                  };
+              })
             .AddAspNetIdentity<ApplicationUser>()
             .Services.AddScoped<IProfileService, ProfileService>();
 
