@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -49,8 +50,21 @@ namespace MvcClient
                     options.Authority = "http://localhost:5000";
                     options.RequireHttpsMetadata = false;
 
-                    options.ClientId = "mvc";
+                    options.ClientId = "hybrid_and_api_access_mvc";
                     options.SaveTokens = true;
+
+                    #region 设置这些属性，以支持混合流程
+
+                    options.ClientSecret = "secret";
+                    options.ResponseType = "code id_token";
+                    options.GetClaimsFromUserInfoEndpoint = true;
+                    options.Scope.Add("api1");
+                    options.Scope.Add("offline_access");
+                    // 要将website声明保留在我们的mvc客户端身份中，我们需要使用ClaimActions明确映射声明。
+                    options.ClaimActions.MapJsonKey("website", "website");
+
+                    #endregion
+
                 });
         }
 

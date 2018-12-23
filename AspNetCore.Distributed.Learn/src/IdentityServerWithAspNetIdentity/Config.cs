@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using IdentityServer4;
 using IdentityServer4.Models;
 using IdentityServer4.Test;
 
-namespace IdentityServer
+namespace IdentityServerWithAspNetIdentity
 {
     /// <summary>
     /// IdentityServer配置帮助类
@@ -53,7 +53,7 @@ namespace IdentityServer
 
                     RedirectUris           = { "http://localhost:5001/signin-oidc" },
                     PostLogoutRedirectUris = { "http://localhost:5001/signout-callback-oidc" },
-
+                    RequireConsent =false,
                     AllowedScopes =
                     {
                         IdentityServerConstants.StandardScopes.OpenId,

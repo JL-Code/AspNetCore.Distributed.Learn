@@ -24,6 +24,16 @@ namespace IdentityServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+       //     services.AddDbContext<ApplicationDbContext>(options =>
+       //options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+       //     services.AddIdentity<ApplicationUser, IdentityRole>()
+       //         .AddEntityFrameworkStores<ApplicationDbContext>()
+       //         .AddDefaultTokenProviders();
+
+       //     // Add application services.
+       //     services.AddTransient<IEmailSender, EmailSender>();
+
             services.Configure<CookiePolicyOptions>(options =>
             {
                 // This lambda determines whether user consent for non-essential cookies is needed for a given request.
@@ -37,13 +47,16 @@ namespace IdentityServer
             // 添加认证服务
             services.AddIdentityServer()
                 .AddDeveloperSigningCredential()
-                .AddInMemoryClients(Config.GetClients())
+                //.AddInMemoryPersistedGrants()
+                .AddInMemoryApiResources(Config.GetApiResources())
                 .AddInMemoryIdentityResources(Config.GetIdentityResources())
+                .AddInMemoryClients(Config.GetClients())
                 .AddTestUsers(Config.GetTestUsers());
+            //.AddAspNetIdentity<ApplicationUser>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env,ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             loggerFactory.AddConsole();
             if (env.IsDevelopment())
@@ -57,7 +70,7 @@ namespace IdentityServer
 
             app.UseStaticFiles();
             app.UseCookiePolicy();
-            // 使用IdentityServer
+            // app.UseAuthentication(); // not needed, since UseIdentityServer adds the authentication middleware
             app.UseIdentityServer();
             app.UseMvc(routes =>
             {
