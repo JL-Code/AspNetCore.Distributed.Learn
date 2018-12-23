@@ -8,6 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 using IdentityServerWithAspNetIdentity.Models;
 using IdentityServerWithAspNetIdentity.Entities;
 using IdentityServer4.Services;
+using IdentityServer4.EntityFramework.DbContexts;
+using System.Linq;
+using IdentityServer4.EntityFramework.Mappers;
 
 namespace IdentityServerWithAspNetIdentity
 {
@@ -85,6 +88,7 @@ namespace IdentityServerWithAspNetIdentity
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            InitIdentityServerData(app);
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -97,7 +101,7 @@ namespace IdentityServerWithAspNetIdentity
             }
 
             app.UseStaticFiles();
-
+       
             //app.UseAuthentication();
             // not needed, since UseIdentityServer adds the authentication middleware 不需要，因为UseIdentityServer添加了身份验证中间件
             app.UseIdentityServer();
@@ -108,6 +112,43 @@ namespace IdentityServerWithAspNetIdentity
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
+        }
+
+        public  void InitIdentityServerData(IApplicationBuilder app)
+        {
+
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                scope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.Migrate();
+                var configurationDbContext = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+
+                if (!configurationDbContext.Clients.Any())
+                {
+                    foreach (var client in Config.GetClients())
+                    {
+                        configurationDbContext.Clients.Add(client.ToEntity());
+                    }
+                    configurationDbContext.SaveChanges();
+                }
+
+                if (!configurationDbContext.ApiResources.Any())
+                {
+                    foreach (var api in Config.GetApiResources())
+                    {
+                        configurationDbContext.ApiResources.Add(api.ToEntity());
+                    }
+                    configurationDbContext.SaveChanges();
+                }
+
+                if (!configurationDbContext.IdentityResources.Any())
+                {
+                    foreach (var identity in Config.GetIdentityResources())
+                    {
+                        configurationDbContext.IdentityResources.Add(identity.ToEntity());
+                    }
+                    configurationDbContext.SaveChanges();
+                }
+            }
         }
     }
 }
